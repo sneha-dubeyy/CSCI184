@@ -1,28 +1,12 @@
-# decision_tree.py
-# ---------
-
-# INSTRUCTIONS:
-# ------------
-# 1. This file contains a skeleton for implementing the ID3 algorithm for
-# Decision Trees. Insert your code into the various functions that have the
-# comment "INSERT YOUR CODE HERE".
-#
-# 2. Do NOT modify the classes or functions that have the comment "DO NOT
-# MODIFY THIS FUNCTION".
-#
-# 3. Do not modify the function headers for ANY of the functions.
-#
-# 4. You may add any other helper functions you feel you may need to print,
-# visualize, test, or save the data and results. However, you MAY NOT utilize
-# the package scikit-learn OR ANY OTHER machine learning package in THIS file.
-
-import numpy as np
 import os
 import graphviz
+import numpy as np
+import pandas as pd
+
 
 
 def partition(x):
-    """
+        """
     Partition the column vector x into subsets indexed by its unique values (v1, ... vk)
 
     Returns a dictionary of the form
@@ -31,113 +15,137 @@ def partition(x):
       ...
       vk: indices of x == vk }, where [v1, ... vk] are all the unique values in the vector x.
     """
-
-    # INSERT YOUR CODE HERE
-    
-    
-    raise Exception('Function not yet implemented!')
+    partitions = {}
+    uniqueX = np.unique(x)
+    for ux in uniqueX:
+        partitions[ux] = np.where(x == ux)[0]
+    return partitions
 
 
 def entropy(y):
-    """
-    Compute the entropy of a vector y by considering the counts of the unique values (v1, ... vk), in y
-
-    Returns the entropy of y: H(y) = p(y=v1)*log2(p(y=v1)) + ... + p(y=vk)*log2(p(y=vk))
-    """
-
-    # INSERT YOUR CODE HERE
-    
-    
-    raise Exception('Function not yet implemented!')
-
+    ENT = 0
+    classes = np.unique(y)
+    for c in classes:
+        targetClassCount = 0
+        for index in range(0, len(y)):
+            if y[index] == c:
+                targetClassCount += 1
+        p = targetClassCount / len(y)
+        ENT += ((-1)*p)*np.log2(p)
+    return ENT
 
 def information_gain(x, y):
-    """
-    Compute the information gain of a data column (x) with respect to the labels (y). The data column is a single  
-    attribute/feature over all the examples (n x 1). Information gain is the difference between the entropy BEFORE 
-    the split set (parent node), and the weighted-average entropy of EACH possible child node after splitting.
-
-    Returns the information gain: IG(x, y) = parent entroy H(Parent)  - weighted sum of child entroy H(child)
-    """
-
-    # INSERT YOUR CODE HERE
+    pENT = entropy(y)
+    partitions = partition(x)
+    wcENT = 0
     
-    
-    raise Exception('Function not yet implemented!')
+    for part in partitions.values():
+        cENT = entropy(y[part])
+        partW = len(part)/len(y)
+        wcENT += partW/cENT
+    IG = pENT - wcENT
+    return IG
 
 
 def id3(x, y, attribute_value_pairs=None, depth=0, max_depth=5):
-    """
-    Implements the classical ID3 algorithm given training data (x), training labels (y) and an array of
-    attribute-value pairs to consider. This is a recursive algorithm that depends on three termination conditions
-        1. If the entire set of labels (y) is pure (all y = only 0 or only 1), then return that label
-        2. If the set of attribute-value pairs is empty (there is nothing to split on), then return the most common
-           value of y (majority label)
-        3. If the max_depth is reached (pre-pruning bias), then return the most common value of y (majority label)
-    Otherwise the algorithm selects the next best attribute-value pair using INFORMATION GAIN as the splitting criterion
-    and partitions the data set based on the values of that attribute before the next recursive call to ID3.
-
-    The tree we learn is a BINARY tree, which means that every node has only two branches. The splitting criterion has
-    to be chosen from among all possible attribute-value pairs. That is, for a problem with two features/attributes x1
-    (taking values a, b, c) and x2 (taking values d, e), the initial attribute value pair list is a list of all pairs of
-    attributes with their corresponding values:
-    [(x1, a),
-     (x1, b),
-     (x1, c),
-     (x2, d),
-     (x2, e)]
-     If we select (x2, d) as the best attribute-value pair, then the new decision node becomes: [ (x2 == d)? ] and
-     the attribute-value pair (x2, d) is removed from the list of attribute_value_pairs.
-
-    The tree is stored as a nested dictionary, where each entry is of the form
-                    (attribute_index, attribute_value, True/False): subtree
-    * The (attribute_index, attribute_value) determines the splitting criterion of the current node. For example, (4, 2)
-    indicates that we test if (x4 == 2) at the current node.
-    * The subtree itself can be nested dictionary, or a single label (leaf node).
-    * Leaf nodes are (majority) class labels
-
-    Returns a decision tree represented as a nested dictionary, for example
-    {(4, 1, False):
-        {(0, 1, False):
-            {(1, 1, False): 1,
-             (1, 1, True): 0},
-         (0, 1, True):
-            {(1, 1, False): 0,
-             (1, 1, True): 1}},
-     (4, 1, True): 1}
-    """
-
-    # INSERT YOUR CODE HERE. NOTE: THIS IS A RECURSIVE FUNCTION.
+    # first stopping condition
+    if len(np.unique(y)) = 1:
+        return np.unique(y)[0]
     
+    # second stopping condition
+    if attribute_value_pairs = None:
+        mostCommonLabel
+        mclCount = 0
+        for label in np.unique(y):
+            currLabelCount = 0
+            for obj in y:
+                if obj == label:
+                    currLabelCount += 1
+            if currLabelCount > mclCount:
+                mostCommonLabel = label
+                mclCount = currLabelCount
+        return mostCommonLabel
     
-    raise Exception('Function not yet implemented!')
+    # third stopping condition
+    if depth == max_depth:
+        mostCommonLabel
+        mclCount = 0
+        for label in np.unique(y):
+            currLabelCount = 0
+            for obj in y:
+                if obj == label:
+                    currLabelCount += 1
+            if currLabelCount > mclCount:
+                mostCommonLabel = label
+                mclCount = currLabelCount
+        return mostCommonLabel
+    
+    # selecting the next-best attribute-value pair using information_gain()
+    bestAVP = []
+    maxIG = 0
+    for avp in attribute_value_pairs:
+        currIG = information_gain(x[:, avp[0]], y)
+        if currIG > maxIG:
+            bestAVP = avp
+            maxIG = currIG
+    
+    # getting all remaining attribute-value pairs
+    otherAVP = []
+    for attribute, value in attribute_value_pairs:
+        if attribute != bestAVP[0]:
+            otherAVP += (attribute, value)
+   
+    # partitioning on bestAVP
+    partitions = partition(x[:, bestAVP[0]])
+    
+    # recursive call to ID3
+    tree = {}
+    for value, indices in partition.items():
+        if len(indices) == 0:
+            mostCommonLabel
+            mclCount = 0
+            for label in np.unique(y):
+                currLabelCount = 0
+                for obj in y:
+                    if obj == label:
+                        currLabelCount += 1
+                if currLabelCount > mclCount:
+                    mostCommonLabel = label
+                    mclCount = currLabelCount
+            tree[(bestAVP[0], value, True)] = mostCommonLabel
+        else:
+            tree[(bestAVP[0], value, True)] = id3(x[indices], y[indices], otherAVP, depth + 1, max_depth)
+            
+    return tree
 
 
 def predict_example(x, tree):
-    """
-    Predicts the classification label for a single example x using tree by recursively descending the tree until
-    a label/leaf node is reached.
-
-    Returns the predicted label of x according to tree
-    """
-
-    # INSERT YOUR CODE HERE. NOTE: THIS IS A RECURSIVE FUNCTION.
-    
-    
-    raise Exception('Function not yet implemented!')
+    if type(tree) == int:
+        return tree
+    else:
+        attribute = list(tree.keys())[0][0]
+        value = list(tree.keys())[0][1]
+        if x[attribute] == value:
+            return predict_example(x, tree[(attribute, value, True)])
+        else:
+            return predict_example(x, tree[(attribute, value, False)])
 
 
 def compute_error(y_true, y_pred):
-    """
-    Computes the average error between the true labels (y_true) and the predicted labels (y_pred)
+    incorrect = 0
+    n = len(y_pred)
+    for true in y_true, pred in y_pred:
+        if true != pred:
+            incorrect += 1
+    error = (1/n)*incorrect
+    return error
 
-    Returns the error = (1/n) * sum(y_true != y_pred)
-    """
 
-    # INSERT YOUR CODE HERE
-    
-    
-    raise Exception('Function not yet implemented!')
+
+
+# END OF ASSIGNMENT
+
+
 
 
 def pretty_print(tree, depth=0):
