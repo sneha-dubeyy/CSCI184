@@ -1,20 +1,13 @@
 import os
 import graphviz
+import itertools 
 import numpy as np
 import pandas as pd
 
 
+# CODE TO IMPLEMENT
 
 def partition(x):
-        """
-    Partition the column vector x into subsets indexed by its unique values (v1, ... vk)
-
-    Returns a dictionary of the form
-    { v1: indices of x == v1,
-      v2: indices of x == v2,
-      ...
-      vk: indices of x == vk }, where [v1, ... vk] are all the unique values in the vector x.
-    """
     partitions = {}
     uniqueX = np.unique(x)
     for ux in uniqueX:
@@ -22,17 +15,20 @@ def partition(x):
     return partitions
 
 
+
 def entropy(y):
     ENT = 0
-    classes = np.unique(y)
-    for c in classes:
-        targetClassCount = 0
+    labels = np.unique(y)
+    for l in labels:
+        targetLabelCount = 0
         for index in range(0, len(y)):
-            if y[index] == c:
-                targetClassCount += 1
-        p = targetClassCount / len(y)
-        ENT += ((-1)*p)*np.log2(p)
+            if y[index] == l:
+                targetLabelCount += 1
+        p = targetLabelCount / len(y)
+        ENT -= p*np.log2(p)
     return ENT
+
+
 
 def information_gain(x, y):
     pENT = entropy(y)
@@ -42,19 +38,20 @@ def information_gain(x, y):
     for part in partitions.values():
         cENT = entropy(y[part])
         partW = len(part)/len(y)
-        wcENT += partW/cENT
+        wcENT += partW*cENT
     IG = pENT - wcENT
     return IG
 
 
+
 def id3(x, y, attribute_value_pairs=None, depth=0, max_depth=5):
     # first stopping condition
-    if len(np.unique(y)) = 1:
+    if len(np.unique(y)) == 1:
         return np.unique(y)[0]
     
     # second stopping condition
-    if attribute_value_pairs = None:
-        mostCommonLabel
+    if attribute_value_pairs == None:
+        mostCommonLabel = 0
         mclCount = 0
         for label in np.unique(y):
             currLabelCount = 0
@@ -68,7 +65,7 @@ def id3(x, y, attribute_value_pairs=None, depth=0, max_depth=5):
     
     # third stopping condition
     if depth == max_depth:
-        mostCommonLabel
+        mostCommonLabel = 0
         mclCount = 0
         for label in np.unique(y):
             currLabelCount = 0
@@ -81,7 +78,7 @@ def id3(x, y, attribute_value_pairs=None, depth=0, max_depth=5):
         return mostCommonLabel
     
     # selecting the next-best attribute-value pair using information_gain()
-    bestAVP = []
+    bestAVP = ()
     maxIG = 0
     for avp in attribute_value_pairs:
         currIG = information_gain(x[:, avp[0]], y)
@@ -93,16 +90,16 @@ def id3(x, y, attribute_value_pairs=None, depth=0, max_depth=5):
     otherAVP = []
     for attribute, value in attribute_value_pairs:
         if attribute != bestAVP[0]:
-            otherAVP += (attribute, value)
-   
+            otherAVP.append((attribute, value))
+
     # partitioning on bestAVP
     partitions = partition(x[:, bestAVP[0]])
     
     # recursive call to ID3
     tree = {}
-    for value, indices in partition.items():
+    for value, indices in partitions.items():
         if len(indices) == 0:
-            mostCommonLabel
+            mostCommonLabel = 0
             mclCount = 0
             for label in np.unique(y):
                 currLabelCount = 0
@@ -115,38 +112,35 @@ def id3(x, y, attribute_value_pairs=None, depth=0, max_depth=5):
             tree[(bestAVP[0], value, True)] = mostCommonLabel
         else:
             tree[(bestAVP[0], value, True)] = id3(x[indices], y[indices], otherAVP, depth + 1, max_depth)
-            
     return tree
+
 
 
 def predict_example(x, tree):
     if type(tree) == int:
+        print('PREDICTED ', tree)
         return tree
-    else:
+    if type(tree) == dict:
         attribute = list(tree.keys())[0][0]
         value = list(tree.keys())[0][1]
         if x[attribute] == value:
+            print('PREDICTED to true')
             return predict_example(x, tree[(attribute, value, True)])
         else:
             return predict_example(x, tree[(attribute, value, False)])
 
 
+
 def compute_error(y_true, y_pred):
     incorrect = 0
     n = len(y_pred)
-    for true in y_true, pred in y_pred:
+    for (true, pred) in zip(y_true, y_pred):
         if true != pred:
             incorrect += 1
     error = (1/n)*incorrect
     return error
 
-
-
-
-# END OF ASSIGNMENT
-
-
-
+# DO NOT MODIFY THESE
 
 def pretty_print(tree, depth=0):
     """
@@ -170,6 +164,7 @@ def pretty_print(tree, depth=0):
             print('|\t' * (depth + 1), end='')
             print('+-- [LABEL = {0}]'.format(sub_trees))
 
+            
 
 def render_dot_file(dot_string, save_file, image_format='png'):
     """
@@ -190,6 +185,7 @@ def render_dot_file(dot_string, save_file, image_format='png'):
     graph.render(save_file, view=True)
 
 
+    
 def to_graphviz(tree, dot_string='', uid=-1, depth=0):
     """
     Converts a tree to DOT format for use with visualize/GraphViz
@@ -235,32 +231,43 @@ def to_graphviz(tree, dot_string='', uid=-1, depth=0):
         return dot_string, node_id, uid
 
 
+# MAIN (MAY MODIFY IF NEEDED)
+
 if __name__ == '__main__':
     
     #You may modify the following parts as needed
     
     # Load the training data
-    M = np.genfromtxt('./monks-1.train', missing_values=0, skip_header=0, delimiter=',', dtype=int)
+    M = np.genfromtxt('monks_data/monks-1.train', missing_values=0, skip_header=0, delimiter=',', dtype=int)
     ytrn = M[:, 0]
     Xtrn = M[:, 1:]
 
     # Load the test data
-    M = np.genfromtxt('./monks-1.test', missing_values=0, skip_header=0, delimiter=',', dtype=int)
+    M = np.genfromtxt('monks_data/monks-1.test', missing_values=0, skip_header=0, delimiter=',', dtype=int)
     ytst = M[:, 0]
     Xtst = M[:, 1:]
 
+    # Get attribute_value_pair for the data
+    AVP = []
+    for obj in M:
+        for i in range(1, 6):
+            if (i, obj[i]) not in AVP:
+                AVP.append((i, obj[i]))
+    
     # Learn a decision tree of depth 3
-    decision_tree = id3(Xtrn, ytrn, max_depth=3)
+    decision_tree = id3(Xtrn, ytrn, AVP, 0, 3)
 
     # Pretty print it to console
     pretty_print(decision_tree)
-
+    
     # Visualize the tree and save it as a PNG image
     dot_str = to_graphviz(decision_tree)
     render_dot_file(dot_str, './my_learned_tree')
 
     # Compute the test error
     y_pred = [predict_example(x, decision_tree) for x in Xtst]
+    print(y_pred)
+    print(ytst)
     tst_err = compute_error(ytst, y_pred)
 
     print('Test Error = {0:4.2f}%.'.format(tst_err * 100))
